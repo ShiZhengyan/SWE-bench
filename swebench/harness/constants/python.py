@@ -1450,3 +1450,67 @@ USE_X86_PY = {
     "sympy__sympy-15222",
     "sympy__sympy-19201",
 }
+
+# --------------------------------------------------------------------------- #
+# Dynamically add the “temporal” repo names created in
+# ZhengyanShi/SWE-bench_Verified_Temporal_9(_ORG) so that they resolve to the
+# same specs / paths as the original repo keys.
+# --------------------------------------------------------------------------- #
+def _extend_repo_mappings_with_temporal_dataset() -> None:
+    """
+    Every record in the *Verified_Temporal* dataset has:
+        repo        – original repo string, e.g.  "django/django"
+        base_commit – commit hash (full 40-chars)
+
+    The repo key actually used by the harness is built as
+        f"{repo.replace('/', '__')}.{base_commit[:8]}"
+
+    This helper loads the dataset (if `datasets` is available) and duplicates
+    the existing mapping entries for the newly-constructed repo keys so that
+    all downstream logic keeps working without touching the rest of the code
+    base.  If the dataset (or the `datasets` library) cannot be loaded, we
+    silently skip the extension – the “classic” dataset continues to work.
+    """
+    try:
+        from datasets import load_dataset  # optional runtime dependency
+    except Exception:  # noqa: BLE001  – any import/load error → skip
+        return
+
+    try:
+        ds = load_dataset(
+            "ZhengyanShi/SWE-bench_Verified_Temporal_9", split="train", streaming=False
+        )
+    except Exception:  # dataset unavailable → skip
+        return
+
+    # Aliases to shorten local variables
+    _specs_map = MAP_REPO_VERSION_TO_SPECS_PY
+    _reqs_map = MAP_REPO_TO_REQS_PATHS
+    _env_map = MAP_REPO_TO_ENV_YML_PATHS
+    _install_map = MAP_REPO_TO_INSTALL_PY
+
+    for instance in ds:
+        repo = instance["repo"]
+        base_commit = instance["base_commit"]
+        new_repo_key = f"OneRepoOneModel/{repo.replace('/', '__')}.{base_commit[:8]}"
+
+        # 1) version → spec map
+        if repo in _specs_map and new_repo_key not in _specs_map:
+            _specs_map[new_repo_key] = _specs_map[repo]
+
+        # 2) repo → requirements.txt paths
+        if repo in _reqs_map and new_repo_key not in _reqs_map:
+            _reqs_map[new_repo_key] = _reqs_map[repo]
+
+        # 3) repo → environment.yml paths
+        if repo in _env_map and new_repo_key not in _env_map:
+            _env_map[new_repo_key] = _env_map[repo]
+
+        # 4) repo → install instructions (only present for a few repos)
+        if repo in _install_map and new_repo_key not in _install_map:
+            _install_map[new_repo_key] = _install_map[repo]
+
+
+# Execute on import
+_extend_repo_mappings_with_temporal_dataset()
+# --------------------------------------------------------------------------- #

@@ -107,10 +107,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_name",
         type=str,
-        default="SWE-bench/SWE-bench_Lite",
+        default="ZhengyanShi/SWE-bench_Verified_Temporal_9_ORG",
         help="Name of the dataset to use",
     )
-    parser.add_argument("--split", type=str, default="test", help="Split to use")
+    parser.add_argument("--split", type=str, default="train", help="Split to use")
     parser.add_argument(
         "--instance_ids",
         nargs="+",
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         help="Namespace to use for the images (default: None)",
     )
     parser.add_argument(
-        "--tag", type=str, default=None, help="Tag to use for the images"
+        "--tag", type=str, default="latest", help="Tag to use for the images"
     )
     args = parser.parse_args()
     main(**vars(args))
